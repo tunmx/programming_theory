@@ -4,11 +4,48 @@ Created by Jingyu Yan on 2023/11/25.
 
 import copy
 
-C = "C"             # op: copy
-Z = "Z"             # op: zero
-J = "J"             # op: jump
-S = "S"             # op: successor
-_END = "END"         # op: end (private)
+
+def urm_op(func):
+    def wrapper(*args):
+        function_name = func.__name__
+        return (function_name, *args)
+
+    return wrapper
+
+
+@urm_op
+def C():
+    """
+    OP: Copy external.
+    """
+    pass
+
+
+@urm_op
+def J():
+    """
+    OP: Jump external.
+    """
+    pass
+
+
+@urm_op
+def Z():
+    """
+    OP: Zero external.
+    """
+    pass
+
+
+@urm_op
+def S():
+    """
+    OP: Successor external.
+    """
+    pass
+
+
+_END = "END"  # op: end (private)
 
 
 class URM(object):
@@ -60,6 +97,8 @@ class URM(object):
         self.instructions = instructions
         self.initial_registers = initial_registers
         self.instructions.append(('END',))  # Include an exit instruction by default.
+        for v in self.initial_registers:
+            assert v >= 0, "Input must be a natural number"
 
     def forward(self, safety_count=1000):
         """
@@ -109,4 +148,3 @@ class URM(object):
         Forward
         """
         return self.forward(*args, **kwargs)
-
