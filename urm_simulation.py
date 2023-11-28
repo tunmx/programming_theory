@@ -5,49 +5,6 @@ Created by Jingyu Yan on 2023/11/25.
 import copy
 
 
-def urm_op(func):
-    def wrapper(*args):
-        function_name = func.__name__
-        return (function_name, *args)
-
-    return wrapper
-
-
-@urm_op
-def C():
-    """
-    OP: Copy external.
-    """
-    pass
-
-
-@urm_op
-def J():
-    """
-    OP: Jump external.
-    """
-    pass
-
-
-@urm_op
-def Z():
-    """
-    OP: Zero external.
-    """
-    pass
-
-
-@urm_op
-def S():
-    """
-    OP: Successor external.
-    """
-    pass
-
-
-_END = "END"  # op: end (private)
-
-
 class URM(object):
     """
     Implementation scheme for simulating an Unlimited Register Machine,
@@ -148,3 +105,37 @@ class URM(object):
         Forward
         """
         return self.forward(*args, **kwargs)
+
+
+def urm_op(func):
+    """
+    Decorator to convert the function to op.
+    """
+    def wrapper(*args):
+        function_name = func.__name__
+        return (function_name, *args)
+
+    return wrapper
+
+
+@urm_op
+def C():
+    pass
+
+
+@urm_op
+def J():
+    pass
+
+
+@urm_op
+def Z():
+    pass
+
+
+@urm_op
+def S():
+    pass
+
+
+_END = "END"  # op: end (private)
