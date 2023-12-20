@@ -108,6 +108,7 @@ class Instructions(object):
 
     @staticmethod
     def relocation(instructions, alloc: Tuple[int]):
+        print(instructions.haddr())
         if not isinstance(alloc, tuple) or len(alloc) != instructions.haddr() + 1:
             raise ValueError("invalid allocation")
         relocated_instructions = []
@@ -255,7 +256,7 @@ class URMSimulator(object):
             elif op == 'END':
                 break
             count += 1
-
+            print(registers)
             yield copy.deepcopy(registers), f"{current_line}: {op}" + "(" + ", ".join(map(str, instruction[1:])) + ")"
 
     def forward(self, safety_count: int = 1000, only_result=False):
