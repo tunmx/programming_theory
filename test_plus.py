@@ -1,6 +1,7 @@
-from urm_simulation_plus import *
+from urm_simulation import C, Z, J, S
+import urm_simulation as urm
 
-instructions = Instructions([
+instructions = urm.Instructions([
     C(1, 4),
     J(3, 2, 14),
     J(5, 4, 10),
@@ -17,20 +18,20 @@ instructions = Instructions([
     C(4, 0),
 ])
 
-print(f"size: {size(instructions)}")
-print(f"size: {haddr(instructions)}")
+print(f"size: {urm.size(instructions)}")
+print(f"size: {urm.haddr(instructions)}")
 
-instructions_norm = normalize(instructions)
+instructions_norm = urm.normalize(instructions)
 print(instructions)
 print(instructions_norm)
 
-reg = allocate(6)
+reg = urm.allocate(6)
 reg[1] = 20  # set R1 = x
 reg[2] = 19  # set R2 = x
-urm = URMSimulator(instructions=instructions_norm, initial_registers=reg)
+simulator = urm.URMSimulator(instructions=instructions_norm, initial_registers=reg)
 
 safety_count = 10000
-steps = urm(safety_count=safety_count)
+steps = simulator(safety_count=safety_count)
 print(steps)
 
 print(type(steps))

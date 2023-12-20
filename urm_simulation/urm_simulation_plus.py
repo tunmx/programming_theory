@@ -214,6 +214,7 @@ class URMSimulator(object):
         """
         self.instructions = instructions
         self.initial_registers = initial_registers
+        self.run_count = 0
         for v in self.initial_registers:
             assert v >= 0, "Input must be a natural number"
 
@@ -265,11 +266,13 @@ class URMSimulator(object):
         :param safety_count: Set a safe maximum number of computations to prevent the program from falling into an infinite loop (to protect my device).
         :return: Return all computation steps and description of instructions.
         """
+        self.run_count = 0
         gen = URMSimulator.execute_instructions(self.instructions, self.initial_registers, safety_count)
         if not only_result:
             return gen
         reg = None
         for step, command in gen:
+            self.run_count += 1
             reg = step
         return reg
 

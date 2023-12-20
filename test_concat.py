@@ -1,4 +1,4 @@
-from urm_simulation_plus import *
+from urm_simulation.urm_simulation_plus import *
 
 instructions_p = Instructions([
     Z(0), S(1), C(2, 3), J(4, 5, 0)
