@@ -3,15 +3,26 @@ Created by Jingyu Yan on 2023/12/19.
 """
 
 import copy
-from typing import List, Tuple, Generator
+from typing import List, Tuple, Generator, Dict
+from dataclasses import dataclass
 
 
 class Instructions(object):
     """
     'Instructions' represents a list of URM (Unlimited Register Machine) instructions.
+
+    This class is used to store and manipulate a sequence of instructions for a URM simulator.
+    Each instruction in the list is a tuple representing a specific operation in the URM.
     """
 
     def __init__(self, inst=None):
+        """
+        Initializes the Instructions object.
+
+        :param inst: A list of tuples where each tuple represents a URM instruction.
+                     Each instruction is a tuple consisting of an operation code followed
+                     by its arguments. If None is provided, initializes with an empty list.
+        """
         if inst is None:
             inst = list()
         self.instructions = inst
@@ -124,10 +135,25 @@ class Instructions(object):
 
 class Registers(object):
     """
-    'Registers' represents a list of register values for a URM.
+    'Registers' represents a list of register values for a URM (Unlimited Register Machine).
+
+    This class is used to store the state of the registers in a URM simulator.
+    Each register can hold an integer value. The registers are indexed starting from 0.
     """
 
     def __init__(self, lis: List[int]):
+        """
+        Initializes the Registers object with a given list of integers.
+
+        Each integer in the list represents the initial value of a register in the URM.
+        The registers are indexed in the order they appear in the list.
+
+        :param lis: A list of integers representing the initial values of the registers.
+                    Each integer must be non-negative, as URM registers can only hold
+                    natural numbers (including zero).
+
+        :raises ValueError: If any item in the list is not an integer or is a negative integer.
+        """
         for item in lis:
             if not isinstance(item, int):
                 raise ValueError("All items in the list must be integers")
@@ -167,6 +193,17 @@ class Registers(object):
         return reg
 
 
+@dataclass
+class URMResult(object):
+    """
+    Store URM simulator calculation results.
+    """
+    num_of_steps: int
+    ops_of_steps: List[str]
+    registers_of_steps: List[Registers]
+    last_registers: Registers
+
+
 class URMSimulator(object):
     """
     Implementation scheme for simulating an Unlimited Register Machine,
@@ -174,7 +211,7 @@ class URMSimulator(object):
     """
 
     @staticmethod
-    def zero(registers: Registers, n: int) -> Registers:
+    def _execute_zero(registers: Registers, n: int) -> Registers:
         """
         Set the value of register number n to 0.
         """
@@ -182,7 +219,7 @@ class URMSimulator(object):
         return registers
 
     @staticmethod
-    def successor(registers: Registers, n: int) -> Registers:
+    def _execute_successor(registers: Registers, n: int) -> Registers:
         """
         Increment the value of register number n.
         """
@@ -190,7 +227,7 @@ class URMSimulator(object):
         return registers
 
     @staticmethod
-    def copy(registers: Registers, j: int, k: int) -> Registers:
+    def _execute_copy(registers: Registers, j: int, k: int) -> Registers:
         """
         Copy the value of register number j to register number k.
         """
@@ -198,7 +235,7 @@ class URMSimulator(object):
         return registers
 
     @staticmethod
-    def jump(registers: Registers, m: int, n: int, q: int, current_line: int) -> int:
+    def _execute_jump(registers: Registers, m: int, n: int, q: int, current_line: int) -> int:
         """
         Jump to line 'q' if values in registers 'm' and 'n' are equal, else go to the next line.
         """
@@ -207,20 +244,9 @@ class URMSimulator(object):
         else:
             return current_line + 1
 
-    def __init__(self, instructions: Instructions, initial_registers: Registers, ):
-        """
-        Initialize a URM (Unlimited Register Machine) model, requiring input of an instruction set and registers.
-        :param instructions: Instruction set, constructed and passed in from outside.
-        :param initial_registers: Registers, constructed and passed in from outside.
-        """
-        self.instructions = instructions
-        self.initial_registers = initial_registers
-        self.run_count = 0
-        for v in self.initial_registers:
-            assert v >= 0, "Input must be a natural number"
-
     @staticmethod
-    def execute_instructions(instructions: Instructions, initial_registers: Registers, safety_count: int = 1000) -> Generator:
+    def execute_instructions(instructions: Instructions, initial_registers: Registers,
+                             safety_count: int = 1000) -> Generator:
         """
         Execute a set of URM (Unlimited Register Machine) instructions.
 
@@ -236,52 +262,67 @@ class URMSimulator(object):
         count = 0
 
         while current_line < len(exec_instructions):
-            assert count < safety_count, "The number of cycles exceeded the safe number."
+            if count > safety_count:
+                raise ValueError("The number of cycles exceeded the safe number.")
 
             instruction = exec_instructions[current_line]
             op = instruction[0]
 
-            if op == 'Z':
-                registers = URMSimulator.zero(registers, instruction[1])
-                current_line += 1
-            elif op == 'S':
-                registers = URMSimulator.successor(registers, instruction[1])
-                current_line += 1
-            elif op == 'C':
-                registers = URMSimulator.copy(registers, instruction[1], instruction[2])
-                current_line += 1
-            elif op == 'J':
-                jump_result = URMSimulator.jump(registers, instruction[1], instruction[2], instruction[3], current_line)
-                current_line = jump_result if jump_result != -1 else len(exec_instructions)
-            elif op == 'END':
-                break
-            count += 1
-            print(registers)
+            try:
+                if op == 'Z':
+                    registers = URMSimulator._execute_zero(registers, instruction[1])
+                    current_line += 1
+                elif op == 'S':
+                    registers = URMSimulator._execute_successor(registers, instruction[1])
+                    current_line += 1
+                elif op == 'C':
+                    registers = URMSimulator._execute_copy(registers, instruction[1], instruction[2])
+                    current_line += 1
+                elif op == 'J':
+                    jump_result = URMSimulator._execute_jump(registers, instruction[1], instruction[2], instruction[3], current_line)
+                    current_line = jump_result if jump_result != -1 else len(exec_instructions)
+                elif op == 'END':
+                    break
+                count += 1
+            except Exception as e:
+                raise RuntimeError(f"Error executing instruction at line {current_line}: {e}")
+
             yield copy.deepcopy(registers), f"{current_line}: {op}" + "(" + ", ".join(map(str, instruction[1:])) + ")"
 
-    def forward(self, safety_count: int = 1000, only_result=False):
-        """
-        Execute simulated URM (Unlimited Register Machine) operations;
-        this is only a simulation and cannot achieve 'infinity'
-        :param only_result: Return only register results.
-        :param safety_count: Set a safe maximum number of computations to prevent the program from falling into an infinite loop (to protect my device).
-        :return: Return all computation steps and description of instructions.
-        """
-        self.run_count = 0
-        gen = URMSimulator.execute_instructions(self.instructions, self.initial_registers, safety_count)
-        if not only_result:
-            return gen
-        reg = None
-        for step, command in gen:
-            self.run_count += 1
-            reg = step
-        return reg
+    @staticmethod
+    def forward(param: Dict[int, int], initial_registers: Registers, instructions: Instructions,
+                safety_count: int = 1000) -> URMResult:
+        registers = copy.deepcopy(initial_registers)
+        if not isinstance(param, dict):
+            raise TypeError("Input param must be a dictionary")
+        for key, value in param.items():
+            if not isinstance(key, int):
+                raise TypeError("All keys must be integers")
+            if not isinstance(value, int):
+                raise TypeError("All values must be integers")
+            if value < 0:
+                raise ValueError("Input Value must be a natural number")
+            if key < 0:
+                raise ValueError("Input Index must be a natural number")
+            registers[key] = value
 
-    def __call__(self, *args, **kwargs):
-        """
-        Forward
-        """
-        return self.forward(*args, **kwargs)
+        registers_list = [copy.deepcopy(registers), ]
+        ops_info = ['Initial']
+        if len(registers) < instructions.haddr():
+            raise ValueError("The number of registers requested cannot satisfy this set of instructions.")
+        gen = URMSimulator.execute_instructions(instructions=instructions, initial_registers=registers,
+                                                safety_count=safety_count)
+        num_of_steps = 0
+        last_registers = None
+        for registers_moment, command in gen:
+            num_of_steps += 1
+            ops_info.append(command)
+            registers_list.append(registers_moment)
+            last_registers = registers_moment
+        result = URMResult(ops_of_steps=ops_info, registers_of_steps=registers_list, last_registers=last_registers,
+                           num_of_steps=num_of_steps)
+
+        return result
 
 
 def urm_op(func):
@@ -394,3 +435,33 @@ def allocate(num: int) -> Registers:
     :return: A Registers object with 'num' registers, each initialized to 0.
     """
     return Registers.allocate(num)
+
+
+def forward(param: Dict[int, int], initial_registers: Registers, instructions: Instructions,
+            safety_count: int = 1000) -> URMResult:
+    """
+    Executes a URM (Unlimited Register Machine) simulation with given parameters, initial registers, and instructions.
+
+    This function sets up the registers according to the input parameters, then runs the URM simulation
+    with the provided instructions. It executes the instructions step by step and keeps track of the
+    state of the registers after each step, returning the final result of the simulation.
+
+    :param param: A dictionary representing the input parameters for the URM simulation.
+                  The keys are register indices (int), and the values are the initial values (int) for those registers.
+    :param initial_registers: A Registers object representing the initial state of all registers.
+                              This object is modified during the simulation according to the URM instructions.
+    :param instructions: An Instructions object representing the set of URM instructions to be executed.
+    :param safety_count: An integer specifying the maximum number of steps to simulate.
+                         This prevents infinite loops in the simulation.
+
+    :return: An URMResult object that contains information about the simulation,
+             including the number of steps executed, the operations performed in each step,
+             the state of the registers after each step, and the final state of the registers.
+
+    Raises:
+        AssertionError: If the input parameters are not a dictionary with integer keys and values,
+                        or if the initial values are not non-negative integers,
+                        or if the number of registers is insufficient for the given instructions.
+    """
+    return URMSimulator.forward(param=param, initial_registers=initial_registers, instructions=instructions,
+                                safety_count=safety_count)

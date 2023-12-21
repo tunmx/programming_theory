@@ -15,13 +15,10 @@ def add_case(x, y):
     safety_count = 1000
     num_of_registers = 4
     registers = urm.allocate(num_of_registers)
-    registers[1] = x
-    registers[2] = y
-    simulation = urm.URMSimulator(instructions, registers)
-    result = simulation(safety_count=safety_count, only_result=True)
-    print(f"run count: {simulation.run_count}")
-    print(result.summary())
-    print(f"add({x}, {y}) = {result[0]}")
+    result = urm.forward({1: x, 2: y}, registers, instructions, safety_count=safety_count)
+    print(f"run count: {result.num_of_steps}")
+    print(result.last_registers.summary())
+    print(f"add({x}, {y}) = {result.last_registers[0]}")
 
 def double_case(x):
     # double(x) = 2x
@@ -36,10 +33,12 @@ def double_case(x):
     safety_count = 1000
     num_of_registers = 4
     registers = urm.allocate(num_of_registers)
-    registers[1] = x
-    simulation = urm.URMSimulator(instructions, registers)
-    result = simulation(safety_count=safety_count, only_result=True)
-    print(result.summary())
+    result = urm.forward({1: x}, registers, instructions, safety_count=safety_count)
+    print(result.last_registers.summary())
+    for idx, reg in enumerate(result.registers_of_steps):
+        command = result.ops_of_steps[idx]
+        print(reg, command)
+
 
 def double_sum_case(x, y):
     # double(sum(x, y)) = 2 * (x + y)
@@ -89,6 +88,6 @@ def double_sum_case(x, y):
 
 
 if __name__ == '__main__':
-    # add_case(30, 20)
-    # double_case(10)
-    double_sum_case(3, 5)
+    add_case(30, 20)
+    double_case(10)
+    # double_sum_case(3, 5)
