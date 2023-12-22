@@ -20,6 +20,10 @@ def add_case(x, y):
     print(result.last_registers.summary())
     print(f"add({x}, {y}) = {result.last_registers[0]}")
 
+    for idx, reg in enumerate(result.registers_of_steps):
+        command = result.ops_of_steps[idx]
+        print(reg, command)
+
 
 def double_case(x):
     # double(x) = 2x
@@ -128,7 +132,7 @@ def computable():
 
 
 if __name__ == '__main__':
-    # add_case(30, 20)
+    add_case(3, 5)
     # double_case(3)
-    double_high_case(3)
+    # double_high_case(3)
     # computable()
