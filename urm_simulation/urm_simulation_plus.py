@@ -30,6 +30,9 @@ class Instructions(object):
     def __str__(self):
         return str(self.instructions)
 
+    def copy(self):
+        return copy.deepcopy(self)
+
     def summary(self):
         # Define the format for each row of the table
         row_format = "{:<5}\t{:<3}\t{:<4}\t{:<4}\t{:<7}\n"
@@ -63,6 +66,13 @@ class Instructions(object):
 
     def __len__(self):
         return len(self.instructions)
+
+    def __add__(self, other):
+        if not isinstance(other, Instructions):
+            raise ValueError("Operand must be an instance of Instructions.")
+
+        # Use concatenation function
+        return Instructions.concatenation(self, other)
 
     def append(self, item):
         self.instructions.append(item)
@@ -161,6 +171,10 @@ class Registers(object):
                 raise ValueError("An integer greater than 0 must be entered")
 
         self.registers = lis
+
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     def summary(self):
         headers = [f"R{i}" for i in range(len(self.registers))]
@@ -287,6 +301,7 @@ class URMSimulator(object):
             except Exception as e:
                 raise RuntimeError(f"Error executing instruction at line {current_line}: {e}")
 
+            # print(registers)
             yield copy.deepcopy(registers), f"{current_line}: {op}" + "(" + ", ".join(map(str, instruction[1:])) + ")"
 
     @staticmethod
