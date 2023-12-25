@@ -24,8 +24,15 @@ class Instructions(object):
                      by its arguments. If None is provided, initializes with an empty list.
         """
         if inst is None:
-            inst = list()
-        self.instructions = inst
+            self.instructions = list()
+        elif isinstance(inst, Instructions):
+            self.instructions = copy.deepcopy(inst.instructions)
+        elif isinstance(inst, list):
+            self.instructions = inst
+        elif isinstance(inst, tuple):
+            self.instructions = [inst]
+        else:
+            raise TypeError("Input data error.")
 
     def __str__(self):
         return str(self.instructions)

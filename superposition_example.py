@@ -45,7 +45,8 @@ def build_sum_triplet():
     return sum_triplet, (input_x_index, input_y_index, input_z_index), (output_index,)
 
 
-def build_sum_n(n: int = 3):
+def build_sum(n: int = 3):
+    # [Step.1] Prepare basic functions and basic parameters
     # Basic function: add(x, y) = x + y
     add_instructions = Instructions([
         C(2, 0),
@@ -77,6 +78,7 @@ def build_sum_n(n: int = 3):
     for i in range(1, n):
         L.append(L[-1] + max(param_num, add_highest) + 1)
 
+    # [Step.2] Build the main compute function instruction for sum()
     # Build the superposition function: sum(a0, a1, a2, ..., an) = add(a0, add(a1, add(a2, ..., add(an-1, an)...)))
     superposition = add_instructions.copy()
 
@@ -84,17 +86,59 @@ def build_sum_n(n: int = 3):
         L_pre = L[idx + 0]
         L_cur = L[idx + 1]
         L_suc = L[idx + 2]
+        # Computes relocation instructions
         alloc = tuple(range(L_cur, L_suc))
-
         g = reloc(add_instructions, alloc)
+        # The glue operator is used to pass the results of the calculation for each section
         glue_op = Instructions([C(L_pre, L_cur + 1)])
+        # Normalized, the output must be in the R0 position
         outputs_normal = Instructions([C(L_cur, 0)])
-
+        # Use connection functions for instruction superposition
         superposition = superposition + glue_op + g + outputs_normal
-
+        # Add inputs index to list
         inputs_index.append(L_cur + 2)
 
-    return superposition, inputs_index, outputs_index
+    # [Step.3] Build sum normalize function
+    highest = haddr(superposition)
+    num_of_sum_param = n
+    # Relocation command to make room for input block
+    alloc = tuple(range(num_of_sum_param, highest + num_of_sum_param + 1))
+    reloc_sum_instructions = reloc(superposition, alloc)
+    # Build sum function inputs block
+    inputs_block = Instructions()
+    last_output_index = 0
+    for loc, idx in enumerate(inputs_index):
+        update_index = idx + num_of_sum_param
+        new_input_in_register = loc + 1
+        # Copy the input value to the each compute section
+        inputs_block.append(C(new_input_in_register, update_index))
+        # Records the output node of the last section
+        last_output_index = update_index - 2
+
+    # Build the complete sum function instruction: P1 -> P2 -> P3
+    final = inputs_block + reloc_sum_instructions + Instructions(C(last_output_index, 0))
+
+    return final
+
+
+def case_sum_n_test(m: int) -> Instructions:
+    sum_instructions, inputs_index, outputs_index = build_sum(m)
+    highest = haddr(sum_instructions)
+    param_num = m
+    alloc = tuple(range(param_num, highest + param_num + 1))
+    reloc_sum_instructions = reloc(sum_instructions, alloc)
+
+    pre = Instructions()
+    last_output_index = 0
+    for loc, idx in enumerate(inputs_index):
+        update_index = idx + param_num
+        new_input_in_register = loc + 1
+        pre.append(C(new_input_in_register, update_index))
+        last_output_index = update_index - 2
+
+    final = pre + reloc_sum_instructions + Instructions(C(last_output_index, 0))
+
+    return final
 
 
 def case_sum_triplet():
@@ -121,26 +165,28 @@ def case_sum_triplet():
 
 def case_sum_n():
     m = 4
-    sum_instructions, inputs_index, outputs_index = build_sum_n(m)
+    sum_instructions, inputs_index, outputs_index = build_sum(m)
     print(sum_instructions)
     print(f"inputs_index: {inputs_index}")
     print(f"outputs_index: {outputs_index}")
     registers = allocate(haddr(sum_instructions) + 1)
     print(registers.summary())
+    print(inputs_index)
 
-    inputs_data = [1, 2, 3, 4]
-    assert len(inputs_data) == len(inputs_index)
-    param = dict(zip(inputs_index, inputs_data))
-    print(param)
-    result = forward(param, registers, sum_instructions,
-                     safety_count=1000)
-    for idx, reg in enumerate(result.registers_of_steps):
-        command = result.ops_of_steps[idx]
-        print(reg, command)
+    # pre = Instructions([C(0, 1)])
 
-    out = outputs_index[0]
-    print(result.last_registers[out])
-
+    # inputs_data = [1, 2, 3, 4]
+    # assert len(inputs_data) == len(inputs_index)
+    # param = dict(zip(inputs_index, inputs_data))
+    # print(param)
+    # result = forward(param, registers, sum_instructions, safety_count=1000)
+    # for idx, reg in enumerate(result.registers_of_steps):
+    #     command = result.ops_of_steps[idx]
+    #     print(reg, command)
+    #
+    # out = outputs_index[0]
+    # print(result.last_registers[out])
+    #
 
 def case_sub():
     sum_instructions = Instructions([
@@ -199,6 +245,7 @@ def build_gm(m: int):
 
     print(instructions_list)
 
+
 if __name__ == '__main__':
     # case_sub()
     # case_sum_triplet()
@@ -206,4 +253,16 @@ if __name__ == '__main__':
     # build_sum_n(4)
 
     # case_sum_n()
-    build_gm(m=5)
+    # build_gm(m=5)
+
+    num_of_sum = 5
+    sum = build_sum(n=num_of_sum)
+    registers = allocate(haddr(sum) + 1)
+    print(sum)
+    array = range(1, num_of_sum + 1)
+    assert len(array) == num_of_sum
+    dictionary = {index + 1: value for index, value in enumerate(array)}
+    result = forward(dictionary, registers, sum, safety_count=1000)
+    for idx, reg in enumerate(result.registers_of_steps):
+        command = result.ops_of_steps[idx]
+        print(reg, command)
