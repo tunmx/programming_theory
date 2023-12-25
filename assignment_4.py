@@ -14,60 +14,33 @@ class SingletonFirst(object):
         for i in range(1, self.m + 1):
             self.L.append(self.L[-1] + max(self.param_num, add_highest) + 1)
 
-        print("L location: ", self.L)
-
-    def build_p1(self):
+    def build_p1(self) -> Instructions:
         instructions_list = Instructions()
         for idx in range(1, len(self.L)):
             for pn in range(1, self.param_num + 1):
                 instructions_list.append(C(pn, self.L[idx] + pn))
 
-        # print(instructions_list)
-
         return instructions_list
 
-    def build_p2(self):
+    def build_p2(self) -> Instructions:
         numbers = tuple(range(0, self.m))
-        # print("L: ", self.L)
-        # print("n: ", numbers)
         superposition = Instructions(self.G1)
-        # print(superposition)
         for idx in range(1, len(numbers)):
-            # print(idx, self.L[idx])
             alloc = tuple(range(self.L[idx], self.L[idx + 1]))
-            # print(alloc)
             reloc_G = reloc(self.G1, alloc)
-            # print(reloc_G)
             superposition = superposition + reloc_G
 
         return superposition
 
     def build_p3(self):
-        # Build P3
-        superposition, inputs_index, outputs_index = self.build_func_sum(self.m)
-        highest = haddr(superposition)
-        num_of_sum_param = self.m
-        # Relocation command to make room for input block
-        alloc = tuple(range(num_of_sum_param, highest + num_of_sum_param + 1))
-        reloc_sum_instructions = reloc(superposition, alloc)
-        # Build sum function inputs block
-        inputs_block = Instructions()
-        last_output_index = 0
-        for loc, idx in enumerate(inputs_index):
-            update_index = idx + num_of_sum_param
-            new_input_in_register = loc + 1
-            # Copy the input value to the each compute section
-            inputs_block.append(C(new_input_in_register, update_index))
-            # Records the output node of the last section
-            last_output_index = update_index - 2
+        p3 = Instructions()
+        for idx in range(self.m):
+            p3.append(C(self.L[idx], self.L[-1] + (idx + 1)))
 
-        # Build the complete sum function instruction
-        final = inputs_block + reloc_sum_instructions + Instructions(C(last_output_index, 0))
-
-        return final
+        return p3
 
     @staticmethod
-    def build_func_sub_xy():
+    def build_func_sub_xy() -> Instructions:
         sub_instructions = Instructions([
             C(1, 4),
             J(3, 2, 14),
@@ -87,7 +60,7 @@ class SingletonFirst(object):
         return sub_instructions
 
     @staticmethod
-    def build_func_sum(n: int = 3):
+    def build_func_sum(n: int = 3) -> Instructions:
         # [Step.1] Prepare basic functions and basic parameters
         # Basic function: add(x, y) = x + y
         add_instructions = Instructions([
@@ -100,69 +73,95 @@ class SingletonFirst(object):
         ])
         # add(x, y) function at the parameter location of the urm register: input_x -> R1, input_y -> R2, output -> R0
         inputs_index = [1, 2, ]
-        outputs_index = [0, ]
-
+        superposition = add_instructions.copy()
         if n < 2:
             raise ValueError("Value n must be > 2")
         elif n == 2:
             # if n = 2 then return add(x, y)
-            return add_instructions, inputs_index, outputs_index
+            pass
+        else:
 
-        # The highest register index of Basic func add(x, y)
-        add_highest = haddr(add_instructions)
-        # Iter number
-        numbers = tuple(range(3, n + 1))
+            # The highest register index of Basic func add(x, y)
+            add_highest = haddr(add_instructions)
+            # Iter number
+            numbers = tuple(range(3, n + 1))
 
-        # add(x, y) has two parameter
-        param_num = 2
-        # Build the index position L for each section
-        L = [0]
-        for i in range(1, n):
-            L.append(L[-1] + max(param_num, add_highest) + 1)
+            # add(x, y) has two parameter
+            param_num = 2
+            # Build the index position L for each section
+            L = [0]
+            for i in range(1, n):
+                L.append(L[-1] + max(param_num, add_highest) + 1)
 
-        # [Step.2] Build the main compute function instruction for sum()
-        # Build the superposition function: sum(a0, a1, a2, ..., an) = add(a0, add(a1, add(a2, ..., add(an-1, an)...)))
-        superposition = add_instructions.copy()
+            # [Step.2] Build the main compute function instruction for sum()
+            # Build the superposition function: sum(a0, a1, a2, ..., an) = add(a0, add(a1, add(a2, ..., add(an-1, an)...)))
 
-        for idx, nb in enumerate(numbers):
-            L_pre = L[idx + 0]
-            L_cur = L[idx + 1]
-            L_suc = L[idx + 2]
-            # Computes relocation instructions
-            alloc = tuple(range(L_cur, L_suc))
-            g = reloc(add_instructions, alloc)
-            # The glue operator is used to pass the results of the calculation for each section
-            glue_op = Instructions([C(L_pre, L_cur + 1)])
-            # Normalized, the output must be in the R0 position
-            outputs_normal = Instructions([C(L_cur, 0)])
-            # Use connection functions for instruction superposition
-            superposition = superposition + glue_op + g + outputs_normal
-            # Add inputs index to list
-            inputs_index.append(L_cur + 2)
+            for idx, nb in enumerate(numbers):
+                L_pre = L[idx + 0]
+                L_cur = L[idx + 1]
+                L_suc = L[idx + 2]
+                # Computes relocation instructions
+                alloc = tuple(range(L_cur, L_suc))
+                g = reloc(add_instructions, alloc)
+                # The glue operator is used to pass the results of the calculation for each section
+                glue_op = Instructions([C(L_pre, L_cur + 1)])
+                # Normalized, the output must be in the R0 position
+                outputs_normal = Instructions([C(L_cur, 0)])
+                # Use connection functions for instruction superposition
+                superposition = superposition + glue_op + g + outputs_normal
+                # Add inputs index to list
+                inputs_index.append(L_cur + 2)
 
-        return superposition, inputs_index, outputs_index
+        # [Step.3] Build sum normalize function
+        highest = haddr(superposition)
+        num_of_sum_param = n
+        # Relocation command to make room for input block
+        alloc = tuple(range(num_of_sum_param, highest + num_of_sum_param + 1))
+        reloc_sum_instructions = reloc(superposition, alloc)
+        # Build sum function inputs block
+        inputs_block = Instructions()
+        last_output_index = 0
+        for loc, idx in enumerate(inputs_index):
+            update_index = idx + num_of_sum_param
+            new_input_in_register = loc + 1
+            # Copy the input value to the each compute section
+            inputs_block.append(C(new_input_in_register, update_index))
+            # Records the output node of the last section
+            last_output_index = update_index - 2
 
-    def build_pipeline(self):
-        P1 = singleton.build_p1()
-        P2 = singleton.build_p2()
-        P3 = singleton.build_p3()
-        P = P1 + P2
-        highest = haddr(P3)
-        alloc = tuple(range(self.m, highest + self.m + 1))
-        print(alloc)
-        PP3 = reloc(P3, alloc)
-        print(P)
-        print(PP3)
+        # Build the complete sum function instruction: P1 -> P2 -> P3
+        final = inputs_block + reloc_sum_instructions + Instructions(C(last_output_index, 0))
 
-        P = P + PP3
+        return final
 
+    def build_pipeline(self) -> Instructions:
+        P1 = self.build_p1()
+        P2 = self.build_p2()
+        P3 = self.build_p3()
+
+        F = self.build_func_sum(self.m)
+
+        alloc = tuple(range(self.L[-1], self.L[-1] + haddr(F) + 1))
+        reloc_F = reloc(F, alloc)
+
+        P = P1 + P2 + P3 + reloc_F + Instructions(C(self.L[self.m], 0))
+
+        return P
+
+    def run(self, *inputs):
+        P = singleton.build_pipeline()
         registers = allocate(haddr(P) + 1)
-        result = forward({1: 3, 2: 1, }, registers, P, safety_count=10000)
+        param = {i: arg for i, arg in enumerate(inputs, start=1)}
+        result = forward(param, registers, P, safety_count=10000)
         for idx, reg in enumerate(result.registers_of_steps):
             command = result.ops_of_steps[idx]
-            print(reg, command)
+            # print(reg, command)
 
+        last = result.last_registers
+
+        print(f"{self.m}*({param[1]}-{param[2]})={last[0]}")
 
 if __name__ == '__main__':
-    singleton = SingletonFirst(m=4)
-    singleton.build_pipeline()
+    m = 10
+    singleton = SingletonFirst(m)
+    singleton.run(7, 4)

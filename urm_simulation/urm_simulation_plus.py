@@ -136,7 +136,6 @@ class Instructions(object):
 
     @staticmethod
     def relocation(instructions, alloc: Tuple[int]):
-        print(instructions.haddr())
         if not isinstance(alloc, tuple) or len(alloc) != instructions.haddr() + 1:
             raise ValueError("invalid allocation")
         relocated_instructions = []
@@ -316,6 +315,7 @@ class URMSimulator(object):
                 safety_count: int = 1000) -> URMResult:
         registers = copy.deepcopy(initial_registers)
         if not isinstance(param, dict):
+
             raise TypeError("Input param must be a dictionary")
         for key, value in param.items():
             if not isinstance(key, int):
