@@ -5,6 +5,34 @@ Created by Jingyu Yan on 2023/12/19.
 import copy
 from typing import List, Tuple, Generator, Dict
 from dataclasses import dataclass
+import time
+from functools import wraps
+
+
+def cost(tag=''):
+    """
+    A decorator for timing a function execution.
+
+    Usage:
+    @cost('optional_tag')
+    def your_function():
+        # function implementation
+    """
+    def wrapper(fn):
+        @wraps(fn)
+        def wrapper_use_time(*args, **kw):
+            t1 = time.time()
+            try:
+                res = fn(*args, **kw)
+            except Exception as e:
+                print(f"Error in {fn.__name__}({tag}): {str(e)}")
+                return None
+            else:
+                t2 = time.time()
+                print(f"{tag}@Cost of {fn.__name__}(): {round(t2 - t1, 3)} seconds")
+                return res
+        return wrapper_use_time
+    return wrapper
 
 
 class Instructions(object):
@@ -178,7 +206,6 @@ class Registers(object):
 
         self.registers = lis
 
-
     def copy(self):
         return copy.deepcopy(self)
 
@@ -299,7 +326,8 @@ class URMSimulator(object):
                     registers = URMSimulator._execute_copy(registers, instruction[1], instruction[2])
                     current_line += 1
                 elif op == 'J':
-                    jump_result = URMSimulator._execute_jump(registers, instruction[1], instruction[2], instruction[3], current_line)
+                    jump_result = URMSimulator._execute_jump(registers, instruction[1], instruction[2], instruction[3],
+                                                             current_line)
                     current_line = jump_result if jump_result != -1 else len(exec_instructions)
                 elif op == 'END':
                     break
@@ -315,7 +343,6 @@ class URMSimulator(object):
                 safety_count: int = 1000) -> URMResult:
         registers = copy.deepcopy(initial_registers)
         if not isinstance(param, dict):
-
             raise TypeError("Input param must be a dictionary")
         for key, value in param.items():
             if not isinstance(key, int):
@@ -459,6 +486,7 @@ def allocate(num: int) -> Registers:
     return Registers.allocate(num)
 
 
+@cost("URM program")
 def forward(param: Dict[int, int], initial_registers: Registers, instructions: Instructions,
             safety_count: int = 1000) -> URMResult:
     """
