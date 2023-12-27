@@ -1,14 +1,44 @@
+import random
+
 from urm_simulation import *
 import numpy as np
+
+
+class MulRecursive(object):
+    @staticmethod
+    def base_case(x):
+        return 0
+
+    @staticmethod
+    def recursive_step(acc, x, n):
+        if n == 0:
+            return acc
+        else:
+            return MulRecursive.recursive_step(acc + x, x, n - 1)
+
+    @staticmethod
+    def multiply(x, y):
+        return MulRecursive.recursive_step(MulRecursive.base_case(x), x, y, )
 
 
 class SingletonSecond(object):
 
     def __init__(self):
+        self.G_haddr = None
         self.func_add_L = [0]
-        add_highest = haddr(self.build_func_add())
+        p1 = self.build_func_add()
+        self.F_highest = haddr(p1)
         for i in range(1, 3):
-            self.func_add_L.append(self.func_add_L[-1] + max(2, add_highest) + 1)
+            self.func_add_L.append(self.func_add_L[-1] + max(2, self.F_highest) + 1)
+        self.L = [0, ]
+        # Input nodes definition
+        self.input_x_index = 3
+        self.input_acc_index = 4
+        self.input_n_index = 5
+        # Output nodes definition
+        self.output_x_index = 0
+        self.output_acc_index = 1
+        self.output_n_index = 2
 
     @staticmethod
     def build_func_add() -> Instructions:
@@ -41,11 +71,6 @@ class SingletonSecond(object):
 
         # Concat add functions and pre functions
         G = ori_add.copy()
-        # add_highest = haddr(ori_add)
-        # add_param_num = 2
-        # add_L1 = 0
-        # add_L2 = add_L1 + max(add_param_num, add_highest + 1)
-        # add_L3 = add_L2 + max(add_param_num, add_highest + 1)
         concat_add_pre_alloc = tuple(range(self.func_add_L[1], self.func_add_L[2]))
 
         reloc_pre = reloc(ori_pre, concat_add_pre_alloc)
@@ -75,9 +100,9 @@ class SingletonSecond(object):
         # Build Output nodes for IG
         O_param_num = 3
         O = Instructions([
-            C(3 + O_param_num, 1),
-            C(4 + O_param_num, 0),
-            C(6 + O_param_num, 2),
+            C(3 + O_param_num, self.output_acc_index),
+            C(4 + O_param_num, self.output_x_index),
+            C(6 + O_param_num, self.output_n_index),
         ])
 
         # Concat
@@ -87,60 +112,54 @@ class SingletonSecond(object):
 
         # Index_x->R3, Index_acc->R4, Index_n->R5;  Output_x->R0, Output_acc->R1， Output_n->R2
         IGO = reloc(IG, concat_O_and_IG_alloc) + O
-        # print(IGO)
+
+        self.G_haddr = haddr(IGO)
 
         return IGO
 
     def build_F_func(self):
-        F = Instructions(Z(4))
+        F = Instructions(Z(self.input_acc_index))
         return F
 
     def build_p3(self):
         CP = Instructions([
-            C(0, 3),
-            C(1, 4),
-            C(2, 5),
+            C(self.output_x_index, self.input_x_index),
+            C(self.output_acc_index, self.input_acc_index),
+            C(self.output_n_index, self.input_n_index),
         ])
         return CP
 
+    def build_p4(self):
+        return Instructions([J(2, self.G_haddr, 0), J(0, 0, self.F_highest)])
+
     def pipeline(self):
-        P2 = self.build_p2()
         P1 = self.build_p1()
+        P2 = self.build_p2()
+        P3 = self.build_p3()
+        P4 = self.build_p4()
 
-        # P2
-        FG = P1 + P2
-        loop = size(P1) + 1
-        print(loop)
-
-        CP = self.build_p3()
-
-        last = haddr(FG)
-        RECUR = Instructions([J(2, last, 0), J(0, 0, loop)])
-
-        # P3
-        P = FG + CP
-        PP = P.copy()
-
-        P.append(RECUR)
-        print(P)
-
-        print(PP + RECUR)
+        P = P1 + P2 + P3
+        P.append(P4)
 
         return P
 
+    def run(self, x, n):
+        P = self.pipeline()
+        print(P)
+        registers = allocate(haddr(P) + 1)
+
+        param = {self.input_x_index: x, self.input_n_index: n}
+        result = forward(param, registers, P, safety_count=100000)
+
+        for idx, reg in enumerate(result.registers_of_steps):
+            command = result.ops_of_steps[idx]
+            print(reg, command)
+        last = result.last_registers
+
+        print(f"{param[self.input_n_index]} * {param[self.input_x_index]} = {last[self.output_acc_index]}")
+
 
 if __name__ == '__main__':
-    s = SingletonSecond()
-    # G = s.build_G_func()
-    # s.test_G(G)
-    P = s.pipeline()
-    # registers = allocate(haddr(P) + 1)
-    # input_x = 3
-    # input_n = 5
-    #
-    # param = {input_x: 4, input_n: 3}
-    # result = forward(param, registers, P, safety_count=150)
-    #
-    # for idx, reg in enumerate(result.registers_of_steps):
-    #     command = result.ops_of_steps[idx]
-    #     print(reg, command)
+    singleton2 = SingletonSecond()
+    singleton2.run(32, 6)
+

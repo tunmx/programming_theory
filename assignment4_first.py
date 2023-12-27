@@ -8,6 +8,12 @@ class SingletonFirst(object):
     Requirement:
         the first of them takes a program for computing a function with m arguments and m programs for computing
         functions of n arguments each and returns the program for computing their superposition;
+    Conclusion:
+        In the "Singleton-1" case, the simulated SUM function is dynamically constructed. It copies and builds URM instructions
+        according to the required multiplicand, consuming more registers and incurring higher computational costs. Conversely,
+        the "Singleton-2" case employs a primitive recursive approach to implement the SUM function, which mitigates this issue
+
+    Student: Jingyu Yan
     """
 
     def __init__(self, m: int, n: int):
