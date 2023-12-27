@@ -6,17 +6,21 @@ def base_case(x):
     return 0
 
 
-def recursive_step(n, acc, x):
+def recursive_step(acc, x, n):
     # 递归步骤: 把 x 加到累加器 acc 上 n 次
     if n == 0:
         return acc
     else:
-        return recursive_step(n - 1, acc + x, x)
+        p1 = acc + x
+        p2 = x
+        p3 = n - 1
+        print(p1, p2, p3)
+        return recursive_step(acc + x, x, n - 1)
 
 
 def multiply(x, y):
     # 乘法函数: 使用原始递归模式计算两个数的乘积
-    return recursive_step(y, base_case(x), x)
+    return recursive_step(base_case(x), x, y, )
 
 
 def build_G():
@@ -24,10 +28,11 @@ def build_G():
         C(1, 2),
         C(2, 0),
         Z(2),
-        J(1, 2, 0),
+        J(1, 2, 8),
         S(0),
         S(2),
-        J(0, 0, 4)
+        J(0, 0, 4),
+        Z(2)
     ])
     pre_instructions = Instructions([
         J(0, 1, 0),
@@ -64,7 +69,7 @@ def build_G():
     CX = Instructions(S(haddr(G) + 1))
 
     G = G + CX
-
+    # G.append(J(0, 0, 5))
 
     return G
 
@@ -74,17 +79,20 @@ def build():
     print(G)
     #
     registers = allocate(haddr(G) + 1)
-    param = {1: 4, 2: 6}
-    result = forward(param, registers, G, safety_count=50)
+    param = {1: 4, 2: 3}
+    result = forward(param, registers, G, safety_count=500)
 
     for idx, reg in enumerate(result.registers_of_steps):
         command = result.ops_of_steps[idx]
         print(reg, command)
 
 
+
+
+
 if __name__ == '__main__':
     # 测试函数
-    # product = multiply(4, 3)  # 应该计算出 4 * 3
-    # print(product)  # 预期输出: 12
+    product = multiply(4, 3)  # 应该计算出 4 * 3
+    print(product)  # 预期输出: 12
 
-    build()
+    # build()

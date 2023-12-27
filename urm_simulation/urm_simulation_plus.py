@@ -110,7 +110,12 @@ class Instructions(object):
         return Instructions.concatenation(self, other)
 
     def append(self, item):
-        self.instructions.append(item)
+        if isinstance(item, list):
+            self.instructions += item
+        elif isinstance(item, Instructions):
+            self.instructions += item.instructions
+        else:
+            self.instructions.append(item)
 
     def haddr(self):
         highest_register = -1
