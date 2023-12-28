@@ -225,7 +225,7 @@ class SingletonFirst(object):
 
         # Check result
         assert self.m * np.sum(inputs) == last[0], "The result is abnormal!"
-        print(f"{self.m}*({'*'.join(map(str, inputs))})={last[0]}")
+        print(f"{self.m}*({'+'.join(map(str, inputs))})={last[0]}")
 
 
 if __name__ == '__main__':
