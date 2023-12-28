@@ -208,7 +208,7 @@ class SingletonFirst(object):
         assert len(
             inputs) == self.param_num, f"The number of input parameters does not match. The value should be {self.param_num}"
         # Build the URM program
-        P = singleton.build_pipeline()
+        P = self.build_pipeline()
         # Create some registers
         registers = allocate(haddr(P) + 1)
         # Prepare input parameter
@@ -223,6 +223,7 @@ class SingletonFirst(object):
         # Result registers
         last = result.last_registers
 
+        # Check result
         assert self.m * np.sum(inputs) == last[0], "The result is abnormal!"
         print(f"{self.m}*({'*'.join(map(str, inputs))})={last[0]}")
 
