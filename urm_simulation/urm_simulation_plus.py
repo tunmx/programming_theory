@@ -340,7 +340,7 @@ class URMSimulator(object):
             except Exception as e:
                 raise RuntimeError(f"Error executing instruction at line {current_line}: {e}")
 
-            print(registers, instruction)
+            # print(registers, instruction)
             yield copy.deepcopy(registers), f"{current_line}: {op}" + "(" + ", ".join(map(str, instruction[1:])) + ")"
 
     @staticmethod
