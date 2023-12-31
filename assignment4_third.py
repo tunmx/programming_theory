@@ -110,7 +110,6 @@ class SingletonThird(object):
         # Build each sub-module
         linear = SingletonThird.build_linear()  # f(n) has 3 param
         greater_than_or_equal = SingletonThird.build_greater_than_or_equal()
-        print(linear)
         # Build computes the minimization function [Inputs, n, target, linear, greater_than, acc+=1, loop]
         # Prepare
         prepare_n_target = Instructions(Z(1), )
@@ -121,33 +120,22 @@ class SingletonThird(object):
         a_from_linear_reloc_loc = haddr(prepare_n_target) + 2
         x_from_linear_reloc_loc = haddr(prepare_n_target) + 3
         b_from_linear_reloc_loc = haddr(prepare_n_target) + 4
-        print("a_from_linear_reloc_loc: ", a_from_linear_reloc_loc)
-        print("x_from_linear_reloc_loc: ", x_from_linear_reloc_loc)
-        print("b_from_linear_reloc_loc: ", b_from_linear_reloc_loc)
-        print(linear_reloc)
 
         G1 = prepare_n_target + Instructions(C(1, x_from_linear_reloc_loc)) + linear_reloc
-        print(G1)
-
         h_G1 = haddr(G1)
         h_gtoe = haddr(greater_than_or_equal)
         gtoe_loc = h_G1 + 1
         reloc_gtoe_range = tuple(range(gtoe_loc, gtoe_loc + h_gtoe + 1))
         gtoe_reloc = reloc(greater_than_or_equal, reloc_gtoe_range)
-        print("greater_than_or_equal: ", greater_than_or_equal)
-        print("gtoe_reloc:", gtoe_reloc)
         glue_copy_value_to_gtoe = Instructions(C(out_from_linear_reloc_loc, gtoe_loc + 1), C(0, gtoe_loc + 2))
-        print(glue_copy_value_to_gtoe)
 
         G2 = G1 + glue_copy_value_to_gtoe + gtoe_reloc
-        print(f"'>=' result index = {gtoe_loc}")
 
         size_G2 = size(G2)
 
         LOOP_pre_size = 6
         LOOP = Instructions(
             Z(gtoe_loc + 5),
-            # J(2, gtoe_loc + 5, size_G2 + LOOP_pre_size),
             S(gtoe_loc + 5),
             J(gtoe_loc, gtoe_loc + 5, size_G2 + LOOP_pre_size),
             S(1),
@@ -161,7 +149,6 @@ class SingletonThird(object):
         self.input_b = b_from_linear_reloc_loc
         self.input_target = 0
 
-        print(G2)
         return G2
 
 
@@ -170,12 +157,12 @@ G = s3.build_pipeline()
 
 registers = allocate(haddr(G) + 1)
 
-a, b, target = 1, 2, 3
-result = forward({s3.input_a: a, s3.input_b: b, s3.input_target: target}, registers, G, safety_count=1000)
-# result = forward({1:0, 2:3, 3:4}, registers, G, safety_count=100)
+a, b, target = 3, 5, 34
+result = forward({s3.input_a: a, s3.input_b: b, s3.input_target: target}, registers, G, safety_count=10000000)
 
 for idx, reg in enumerate(result.registers_of_steps):
     command = result.ops_of_steps[idx]
     print(reg, command)
 last = result.last_registers
 print(last[s3.output_n])
+
