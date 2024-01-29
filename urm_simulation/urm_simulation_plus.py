@@ -43,7 +43,7 @@ class Instructions(object):
     Each instruction in the list is a tuple representing a specific operation in the URM.
     """
 
-    def __init__(self, inst=None):
+    def __init__(self, *inst, ):
         """
         Initializes the Instructions object.
 
@@ -51,16 +51,16 @@ class Instructions(object):
                      Each instruction is a tuple consisting of an operation code followed
                      by its arguments. If None is provided, initializes with an empty list.
         """
-        if inst is None:
-            self.instructions = list()
-        elif isinstance(inst, Instructions):
-            self.instructions = copy.deepcopy(inst.instructions)
-        elif isinstance(inst, list):
-            self.instructions = inst
-        elif isinstance(inst, tuple):
-            self.instructions = [inst]
-        else:
-            raise TypeError("Input data error.")
+        self.instructions = list()
+        for item in inst:
+            if isinstance(item, list):
+                self.instructions += item
+            elif isinstance(item, Instructions):
+                self.instructions += item.instructions
+            elif isinstance(item, tuple):
+                self.instructions.append(item)
+            else:
+                raise TypeError("Input data error.")
 
     def __str__(self):
         return str(self.instructions)
@@ -340,7 +340,7 @@ class URMSimulator(object):
             except Exception as e:
                 raise RuntimeError(f"Error executing instruction at line {current_line}: {e}")
 
-            # print(registers)
+            # print(registers, instruction)
             yield copy.deepcopy(registers), f"{current_line}: {op}" + "(" + ", ".join(map(str, instruction[1:])) + ")"
 
     @staticmethod

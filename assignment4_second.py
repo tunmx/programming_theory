@@ -125,7 +125,7 @@ class SingletonSecond(object):
         G = self.build_G_func()
         # Build input nodes for G
         I = Instructions([
-            J(self.func_add_L[0] + 2, 11, 0),  # if n = 0 than break
+            J(self.func_add_L[0] + 2, 8, 0),  # if n = 0 than break
             C(self.func_add_L[0], self.func_add_L[0] + 4),  # input x index
             C(self.func_add_L[0] + 1, self.func_add_L[0] + 1 + 4),  # input acc index
             C(self.func_add_L[0] + 2, self.func_add_L[1] + 1 + 3),  # input n index
@@ -255,7 +255,8 @@ class SingletonSecond(object):
 
 if __name__ == '__main__':
     singleton2 = SingletonSecond()
+    print(singleton2.build_pipeline())
     # Run check
     singleton2.check()
     # Run example
-    singleton2.run(20, 10)
+    singleton2.run(20, 30)
