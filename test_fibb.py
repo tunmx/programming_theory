@@ -1,7 +1,7 @@
 from urm_simulation import *
 
 # sum(x, y) program instructions set
-fibb_instructions = Instructions([
+fibb_instructions = Instructions(
         J(1, 0, 0),  # 1. if R1 == 0 then fibb(0) = 0
         S(0),  # 2. set R0 = 2
         J(1, 0, 0),  # 3. if R1 = 1 then fibb(1) = 1
@@ -22,7 +22,7 @@ fibb_instructions = Instructions([
         C(4, 3),  # 15. copy fibb(k-1) for the current k to fibb(k-2) for the next k(k++)
 
         J(2, 2, 5),  # 16 do while
-])
+)
 
 P = fibb_instructions
 num_of_registers = haddr(P) + 1
