@@ -63,7 +63,11 @@ class Instructions(object):
                 raise TypeError("Input data error.")
 
     def __str__(self):
-        return str(self.instructions)
+        formatted_instructions = []
+        for instruction in self.instructions:
+            formatted_instruction = f"{instruction[0]}({', '.join(map(str, instruction[1:]))})"
+            formatted_instructions.append(formatted_instruction)
+        return f"[{', '.join(formatted_instructions)}]"
 
     def copy(self):
         return copy.deepcopy(self)

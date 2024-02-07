@@ -180,3 +180,50 @@ class BuildMultiplication(object):
         P.append(loop)
 
         return P
+
+
+mul_instruct = Instructions(
+    Z(4),
+    J(5, 11, 6),
+    C(3, 7),
+    C(4, 8),
+    C(5, 10),
+    C(8, 6),
+    Z(8),
+    J(7, 8, 12),
+    S(6),
+    S(8),
+    J(6, 6, 8),
+    Z(9),
+    J(9, 10, 20),
+    S(11),
+    J(10, 11, 19),
+    S(9),
+    S(11),
+    J(9, 9, 15),
+    Z(11),
+    C(6, 1),
+    C(7, 0),
+    C(9, 2),
+    C(0, 3),
+    C(1, 4),
+    C(2, 5),
+    J(2, 11, 0),
+    J(0, 0, 2)
+)
+
+def multiply(x, y, safety_count=10000):
+    num_of_registers = haddr(mul_instruct) + 1
+    registers = allocate(num_of_registers)
+    input_nodes = {3: x, 5: y}
+    result = forward(input_nodes, registers, mul_instruct, safety_count=safety_count)
+    return result.last_registers[1]
+
+if __name__ == '__main__':
+    # mul = BuildMultiplication().build_pipeline()
+    z = multiply(3, 6)
+    print(z)
+
+    obj = BuildMultiplication()
+    obj.build_pipeline()
+    print(obj.input_x_index, obj.input_n_index, obj.output_acc_index)
