@@ -7,6 +7,11 @@ sys.path.append(parent_dir)
 
 from urm_simulation import *
 
+"""
+dist(x, y) = minus(x, y) + minus(y, x) 
+
+input_R1: x, input_R2: y, output_R0: result
+"""
 minus_instruct = Instructions(
             C(1, 4),
             J(3, 2, 14),

@@ -14,8 +14,8 @@ lt_instruct = Instructions(
     S(0),  # 1
 
     # If either side is 0 first, it will enter the end game
-    J(2, 0, 25),  # 3
-    J(1, 0, 24),  # 2
+    J(2, 0, 25),  # 2
+    J(1, 0, 24),  # 3
 
     # R1 pred
     Z(3),  # 4

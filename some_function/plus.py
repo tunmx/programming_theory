@@ -7,6 +7,11 @@ sys.path.append(parent_dir)
 
 from urm_simulation import *
 
+"""
+plus(x, y) = x + y
+
+input_R1: x, input_R2: y, output_R0: result
+"""
 plus_instruct = Instructions(
     C(2, 0),  # copy R2 to R0
     Z(2),  # set R2 to zero
